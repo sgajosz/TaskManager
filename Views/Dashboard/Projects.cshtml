@@ -1,0 +1,35 @@
+﻿@model IEnumerable<TaskManager.Models.Project>
+
+@{
+    ViewBag.Title = "Projects";
+}
+
+@using TaskManager.Models;
+
+<h2>Projects</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+<div>
+    @Html.ActionLink("Add Project", "AddProject", "Dashboard", new { @class = "navbar-brand" })
+    <br /><br />
+</div>
+<div>
+    <table style="width: 100%">
+        <tr>
+            <th>Project name</th>
+            <th>Owner</th>
+            <th>Creation date</th>
+        </tr>
+        @foreach (Project project in @Model)
+        {
+            <tr>
+                <td>@project.Name</td>
+                <td>@((ViewBag.UserContext as UserContext).Users.Single(user => user.ID == project.UserFK).Name) @((ViewBag.UserContext as UserContext).Users.Single(user => user.ID == project.UserFK).Surname)</td>
+                <td>@project.Creation</td>
+            </tr>
+        }
+    </table>
+</div>
+}

@@ -14,6 +14,7 @@ namespace TaskManager
         protected void Application_Start()
         {
             Database.SetInitializer<TaskManager.Models.UserContext>(null);
+            Database.SetInitializer<TaskManager.Models.ProjectContext>(null);
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);

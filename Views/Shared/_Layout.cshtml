@@ -19,8 +19,17 @@
                 @Html.ActionLink("Task Manager", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-header" style="float: right;">
-                @Html.ActionLink("Sign in", "Login", "Account", new { area = "" }, new { @class = "navbar-brand" });
-                @Html.ActionLink("Sign up", "Register", "Account", new { area = "" }, new { @class = "navbar-brand" });
+                @{ 
+                    if (Session["LoggedIn"] == null)
+                    {
+                        @Html.ActionLink("Sign in", "Login", "Account", new { area = "" }, new { @class = "navbar-brand" });
+                        @Html.ActionLink("Sign up", "Register", "Account", new { area = "" }, new { @class = "navbar-brand" });
+                    }
+                    else
+                    {
+                        @Html.ActionLink("Log out", "Logout", "Account", new { area = "" }, new { @class = "navbar-brand" });
+                    }
+                }
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">

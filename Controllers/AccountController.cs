@@ -104,12 +104,15 @@ namespace TaskManager.Controllers
                 {
                     reader.Read();
                     User usr = new User(reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4));
+                    usr.ID = reader.GetInt32(0);
+                    Session["ID"] = usr.ID;
                     Session["Email"] = usr.Email;
                     Session["Name"] = usr.Name;
                     Session["Surname"] = usr.Surname;
+                    Session["LoggedIn"] = true;
                     reader.Close();
                     connection.Close();
-                    return RedirectToAction("Dashboard", "Account");
+                    return RedirectToAction("Projects", "Dashboard");
                 }
                 else
                 {
@@ -122,9 +125,14 @@ namespace TaskManager.Controllers
         }
 
         [HttpGet]
-        public ActionResult Dashboard()
+        public ActionResult Logout()
         {
-            return View();
+            Session.Remove("ID");
+            Session.Remove("Email");
+            Session.Remove("Name");
+            Session.Remove("Surname");
+            Session.Remove("LoggedIn");
+            return RedirectToAction("Login", "Account");
         }
     }
 }

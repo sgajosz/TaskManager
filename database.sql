@@ -9,6 +9,19 @@
 SELECT * FROM users;
 DELETE FROM users
 
+DROP TABLE projects;
+
+CREATE TABLE projects (
+	id INT PRIMARY KEY IDENTITY (1, 1),
+	userFK INT FOREIGN KEY REFERENCES users(id),
+	name VARCHAR(50) NOT NULL,
+	creation datetime NOT NULL,
+);
+
+SELECT * FROM projects;
+
+
+
 CREATE PROCEDURE addUser
 	@Email varchar(50),
 	@Name varchar(50),
@@ -25,4 +38,15 @@ CREATE PROCEDURE getUser
 AS
 BEGIN
 	SELECT * FROM users WHERE email=@Email and password = @Password
+END
+
+DROP PROCEDURE addProject;
+
+CREATE PROCEDURE addProject
+	@User int,
+	@Name varchar(50),
+	@Creation datetime
+AS
+BEGIN
+	INSERT INTO projects(userFK, name, creation) VALUES (@User, @Name, @Creation)
 END

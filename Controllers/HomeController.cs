@@ -10,6 +10,8 @@ namespace TaskManager.Controllers
     {
         public ActionResult Index()
         {
+            if (Session["LoggedIn"] != null)
+                return RedirectToAction("Projects", "Dashboard");
             return View();
         }
     }
