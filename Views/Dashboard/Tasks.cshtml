@@ -1,0 +1,50 @@
+﻿@model IEnumerable<TaskManager.Models.Task>
+
+@{
+    ViewBag.Title = "Tasks";
+    UserContext userContext = ViewBag.UserContext as UserContext;
+    ProjectContext projectContext = ViewBag.ProjectContext as ProjectContext;
+}
+
+@using TaskManager.Models;
+
+<h2>Tasks</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div>
+        <h3>@Session["CurrentProjectName"]</h3>
+        @Html.ActionLink("Add Task", "AddTask", "Dashboard", new { @class = "navbar-brand" })
+        <br /><br />
+    </div>
+    <div>
+        <table style="width: 100%">
+            <tr>
+                <th><center>Name</center></th>
+                <th><center>Assigned to</center></th>
+                <th><center>Technology</center></th>
+                <th><center>Errand</center></th>
+                <th><center>Type</center></th>
+                <th><center>Hours</center></th>
+                <th><center>Done hours</center></th>
+                <th><center>Status</center></th>
+                <th><center>Description</center></th>
+            </tr>
+            @foreach(Task t in @Model)
+            {
+                <tr>
+                    <td><center>@t.Name</center></td>
+                    <td><center>@userContext.Users.Single(usr => usr.ID == t.UserFK).Name @userContext.Users.Single(usr => usr.ID == t.UserFK).Surname</center></td>
+                    <td><center>@t.Technology</center></td>
+                    <td><center>@t.Errand</center></td>
+                    <td><center>@t.Type</center></td>
+                    <td><center>@t.Hours</center></td>
+                    <td><center>@t.DoneHours</center></td>
+                    <td><center>@t.Status</center></td>
+                    <td><center>@t.Description</center></td>
+                </tr>
+            }
+        </table>
+    </div>
+}

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Web;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TaskManager.Models
 {
@@ -17,6 +12,13 @@ namespace TaskManager.Models
         public string Password { get; set; }
 
         public User() {}
+
+        public User(int id, string name, string surname)
+        {
+            this.ID = id;
+            this.Name = name;
+            this.Surname = surname;
+        }
 
         public User(string email, string name, string surname, string password)
         {

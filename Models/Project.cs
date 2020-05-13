@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Web;
 
 namespace TaskManager.Models
@@ -15,6 +16,14 @@ namespace TaskManager.Models
         public DateTime Creation { get; set; }
 
         public Project() { }
+
+        public Project(int id, int userFK, string name, DateTime creation)
+        {
+            this.ID = id;
+            this.UserFK = userFK;
+            this.Name = name;
+            this.Creation = creation;
+        }
 
         public Project(string name, DateTime creation)
         {

@@ -18,16 +18,25 @@
 <div>
     <table style="width: 100%">
         <tr>
-            <th>Project name</th>
-            <th>Owner</th>
-            <th>Creation date</th>
+            <th><center>Project name</center></th>
+            <th><center>Owner</center></th>
+            <th><center>Creation date</center></th>
+            <th><center>Add person to project</center></th>
         </tr>
         @foreach (Project project in @Model)
         {
             <tr>
-                <td>@project.Name</td>
-                <td>@((ViewBag.UserContext as UserContext).Users.Single(user => user.ID == project.UserFK).Name) @((ViewBag.UserContext as UserContext).Users.Single(user => user.ID == project.UserFK).Surname)</td>
-                <td>@project.Creation</td>
+                <td>@Html.ActionLink(project.Name, "Tasks", "Dashboard", new { projectID = project.ID }, new { @class = "navbar-brand" })</td>
+                <td><center>@((ViewBag.UserContext as UserContext).Users.Single(user => user.ID == project.UserFK).Name) @((ViewBag.UserContext as UserContext).Users.Single(user => user.ID == project.UserFK).Surname)</center></td>
+                <td><center>@project.Creation</center></td>
+                @if (project.UserFK == Int32.Parse(Session["ID"].ToString()))
+                {
+                    <td><center>@Html.ActionLink("Add", "AddPersonToProject", "Dashboard", new { projectID = project.ID }, new { @class = "navbar-brand" })</center></td>
+                }
+                else
+                {
+                    <td><center>Only owner is allowed to do this</center></td>
+                }
             </tr>
         }
     </table>

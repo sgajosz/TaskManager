@@ -34,7 +34,7 @@ namespace TaskManager.Controllers
             if (ModelState.IsValid)
             {
                 User usr = new User(rvm.Email, rvm.Name, rvm.Surname, rvm.Password);
-                string connectionString = ConfigurationManager.ConnectionStrings["UserContext"].ConnectionString;
+                string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
                 SqlConnection connection = new SqlConnection(connectionString);
 
                 SqlCommand cmd = new SqlCommand("addUser", connection);
@@ -81,7 +81,7 @@ namespace TaskManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                string connectionString = ConfigurationManager.ConnectionStrings["UserContext"].ConnectionString;
+                string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
                 SqlConnection connection = new SqlConnection(connectionString);
 
                 SqlCommand cmd = new SqlCommand("getUser", connection);
