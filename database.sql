@@ -91,6 +91,22 @@ BEGIN
 	INSERT INTO tasks(projectFK, userFK, name, technology, errand, type, hours, doneHours, status, description) VALUES (@Project, @User, @Name, @Technology, @Errand, @Type, @Hours, @DoneHours, @Status, @Description)
 END
 
+CREATE PROCEDURE editTask
+	@ID int,
+	@User int,
+	@Name varchar(50),
+	@Technology varchar(50),
+	@Errand varchar(50),
+	@Type varchar(50),
+	@Hours int,
+	@DoneHours int,
+	@Status varchar(50),
+	@Description varchar(255)
+AS
+BEGIN
+	 UPDATE tasks SET userFK = @User, name = @Name, technology = @Technology, errand = @Errand, type = @Type, hours = @Hours, doneHours = @DoneHours, status = @Status, description = @Description WHERE id = @ID
+END
+
 DROP PROCEDURE getTaskForProject;
 
 CREATE PROCEDURE getTaskForProject
@@ -155,3 +171,6 @@ END
 SELECT * FROM technologies;
 SELECT * FROM errands;
 SELECT * FROM types;
+SELECT * FROM tasks;
+DELETE FROM tasks;
+SELECT * FROM users;

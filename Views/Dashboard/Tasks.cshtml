@@ -30,6 +30,7 @@
                 <th><center>Done hours</center></th>
                 <th><center>Status</center></th>
                 <th><center>Description</center></th>
+                <th><center>Edit task</center></th>
             </tr>
             @foreach(Task t in @Model)
             {
@@ -43,6 +44,7 @@
                     <td><center>@t.DoneHours</center></td>
                     <td><center>@t.Status</center></td>
                     <td><center>@t.Description</center></td>
+                    <td><center>@Html.ActionLink("Edit", "EditTask", "Dashboard", new { taskID = t.ID }, new { @class = "navbar-brand" })</center></td>
                 </tr>
             }
         </table>

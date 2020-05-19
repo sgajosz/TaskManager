@@ -1,0 +1,126 @@
+﻿@model TaskManager.ViewModels.TaskViewModel
+@using TaskManager.Models;
+@{
+    ViewBag.Title = "Edit Task";
+
+    List<string> users = ViewBag.Users as List<string>;
+    List<string> technologies = ViewBag.Technologies as List<string>;
+    List<string> errands = ViewBag.Tasks as List<string>;
+    List<string> types = ViewBag.Types as List<string>;
+    List<string> statuses = ViewBag.Statuses as List<string>;
+    Task t = ViewBag.Task as Task;
+    Session["CurrentTask"] = t.ID;
+    string currentUser = String.Empty;
+    int index = 0;
+    for(int i = 0; i < users.Count; i++)
+    {
+        string number = users[i].Split('#')[1];
+        if (t.UserFK == Int32.Parse(number))
+        {
+            currentUser = users[i];
+            index = i;
+        }
+    }
+
+    bool isOwner = ViewBag.isOwner;
+}
+<h2>Edit Task</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+<div class="form-horizontal">
+    <hr />
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.User, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.User, new SelectList(users, index), new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.User, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Technology, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.Technology, new SelectList(technologies), new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Technology, "", new { @class = "text-danger" })
+            @if (isOwner)
+            {
+                @Html.ActionLink("Add", "AddTechnology", "Dashboard")
+            }
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Errand, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.Errand, new SelectList(errands), new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Errand, "", new { @class = "text-danger" })
+            @if (isOwner)
+            {
+                @Html.ActionLink("Add", "AddErrand", "Dashboard")
+            }
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Type, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.Type, new SelectList(types), new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Type, "", new { @class = "text-danger" })
+            @if (isOwner)
+            {
+                @Html.ActionLink("Add", "AddType", "Dashboard")
+            }
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Hours, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.Hours, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Hours, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.DoneHours, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.DoneHours, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.DoneHours, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Status, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.Status, new SelectList(statuses), new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.TextAreaFor(model => model.Description, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="submit" value="Edit" class="btn btn-default" />
+        </div>
+    </div>
+</div>
+}

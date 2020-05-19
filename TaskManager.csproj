@@ -294,7 +294,7 @@
     <Compile Include="ViewModels\ProjectUserJoinViewModel.cs" />
     <Compile Include="ViewModels\ProjectViewModel.cs" />
     <Compile Include="ViewModels\RegistrationViewModel.cs" />
-    <Compile Include="ViewModels\TaskModelView.cs" />
+    <Compile Include="ViewModels\TaskViewModel.cs" />
     <Compile Include="ViewModels\TechnologyViewModel.cs" />
     <Compile Include="ViewModels\TypeViewModel.cs" />
   </ItemGroup>
@@ -345,6 +345,7 @@
     <Content Include="Views\Dashboard\AddTechnology.cshtml" />
     <Content Include="Views\Dashboard\AddType.cshtml" />
     <Content Include="Views\Dashboard\AddErrand.cshtml" />
+    <Content Include="Views\Dashboard\EditTask.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

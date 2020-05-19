@@ -23,6 +23,9 @@ namespace TaskManager.ViewModels
         [Required]
         [DataType(DataType.Text)]
         public int Hours { get; set; }
+        [DataType(DataType.Text)]
+        [Display(Name = "Done hours")]
+        public int DoneHours { get; set; }
         [Required]
         [DataType(DataType.Text)]
         public string Status { get; set; }
@@ -34,6 +37,18 @@ namespace TaskManager.ViewModels
 
         public TaskViewModel(string name, string technology, string errand, string type, int hours, string status, string description)
         {
+            this.Name = name;
+            this.Technology = technology;
+            this.Errand = errand;
+            this.Type = type;
+            this.Hours = hours;
+            this.Status = status;
+            this.Description = description;
+        }
+
+        public TaskViewModel(string user, string name, string technology, string errand, string type, int hours, string status, string description)
+        {
+            this.User = user;
             this.Name = name;
             this.Technology = technology;
             this.Errand = errand;
