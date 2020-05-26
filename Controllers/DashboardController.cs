@@ -1,9 +1,14 @@
-﻿using System;
+﻿using Microsoft.SqlServer.Server;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Web.Mvc;
+using System.Xml;
+using System.Xml.Linq;
 using TaskManager.Models;
 using TaskManager.ViewModels;
 
@@ -553,22 +558,7 @@ namespace TaskManager.Controllers
             if (Session["LoggedIn"] == null)
                 return RedirectToAction("Login", "Account");
 
-            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
-            SqlConnection connection = new SqlConnection(connectionString);
-            connection.Open();
-
-            bool isOwner;
-
-            string sqlCmd = String.Format("SELECT * FROM projects WHERE id = {0} AND userFK = {1}", Session["CurrentProject"].ToString(), Session["ID"].ToString());
-            SqlCommand ownerCheck = new SqlCommand(sqlCmd, connection);
-            if (ownerCheck.ExecuteReader().HasRows)
-                isOwner = true;
-            else
-                isOwner = false;
-
-            connection.Close();
-
-            if (!isOwner)
+            if (!IsOwner())
                 return RedirectToAction("AddTasks", "Dashboard");
 
             return View();
@@ -582,25 +572,21 @@ namespace TaskManager.Controllers
 
             if (ModelState.IsValid)
             {
+                if (!IsOwner())
+                    return RedirectToAction("AddTask", "Dashboard");
 
                 string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
                 SqlConnection connection = new SqlConnection(connectionString);
+
+                string isTechnologyUnique = String.Format("SELECT * FROM technologies WHERE name = '{0}'", tvm.Name);
+                SqlCommand checkTechnology = new SqlCommand(isTechnologyUnique, connection);
                 connection.Open();
-
-                bool isOwner;
-
-                string sqlCmd = String.Format("SELECT * FROM projects WHERE id = {0} AND userFK = {1}", Session["CurrentProject"].ToString(), Session["ID"].ToString());
-                SqlCommand ownerCheck = new SqlCommand(sqlCmd, connection);
-                if (ownerCheck.ExecuteReader().HasRows)
-                    isOwner = true;
-                else
-                    isOwner = false;
-
+                if (checkTechnology.ExecuteReader().HasRows)
+                {
+                    ViewBag.IncorrectName = true;
+                    return View();
+                }
                 connection.Close();
-
-                if (!isOwner)
-                    return RedirectToAction("AddTask", "Dashboard");
-
 
                 SqlCommand insertTechnology = new SqlCommand("addTechnology", connection);
                 insertTechnology.CommandType = System.Data.CommandType.StoredProcedure;
@@ -712,22 +698,7 @@ namespace TaskManager.Controllers
             if (Session["LoggedIn"] == null)
                 return RedirectToAction("Login", "Account");
 
-            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
-            SqlConnection connection = new SqlConnection(connectionString);
-            connection.Open();
-
-            bool isOwner;
-
-            string sqlCmd = String.Format("SELECT * FROM projects WHERE id = {0} AND userFK = {1}", Session["CurrentProject"].ToString(), Session["ID"].ToString());
-            SqlCommand ownerCheck = new SqlCommand(sqlCmd, connection);
-            if (ownerCheck.ExecuteReader().HasRows)
-                isOwner = true;
-            else
-                isOwner = false;
-
-            connection.Close();
-
-            if (!isOwner)
+            if (!IsOwner())
                 return RedirectToAction("AddTask", "Dashboard");
 
             return View();
@@ -741,26 +712,11 @@ namespace TaskManager.Controllers
 
             if (ModelState.IsValid)
             {
+                if (!IsOwner())
+                    return RedirectToAction("AddTask", "Dashboard");
 
                 string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
                 SqlConnection connection = new SqlConnection(connectionString);
-                connection.Open();
-
-                bool isOwner;
-
-                string sqlCmd = String.Format("SELECT * FROM projects WHERE id = {0} AND userFK = {1}", Session["CurrentProject"].ToString(), Session["ID"].ToString());
-                SqlCommand ownerCheck = new SqlCommand(sqlCmd, connection);
-                if (ownerCheck.ExecuteReader().HasRows)
-                    isOwner = true;
-                else
-                    isOwner = false;
-
-                connection.Close();
-
-                if (!isOwner)
-                    return RedirectToAction("AddTask", "Dashboard");
-
-
                 SqlCommand insertTechnology = new SqlCommand("addErrand", connection);
                 insertTechnology.CommandType = System.Data.CommandType.StoredProcedure;
 
@@ -781,6 +737,292 @@ namespace TaskManager.Controllers
             else
                 return View();
             return RedirectToAction("AddTask", "Dashboard");
+        }
+
+        [HttpGet]
+        public ActionResult Valuation(int? projectID)
+        {
+            if (Session["LoggedIn"] == null)
+                return RedirectToAction("Login", "Account");
+
+            if (projectID == null)
+                return RedirectToAction("Projects", "Dashboard");
+
+            Session["CurrentProject"] = projectID;
+
+            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
+
+            string cmd = String.Format("SELECT * FROM projects WHERE id = {0}", projectID.ToString());
+            SqlCommand getUserID = new SqlCommand(cmd, connection);
+
+            connection.Open();
+            SqlDataReader sdr = getUserID.ExecuteReader();
+            int userID = 1;
+            while (sdr.Read())
+            {
+                userID = sdr.GetInt32(1);
+                Session["CurrentProjectName"] = sdr.GetString(2);
+            }
+            connection.Close();
+
+            cmd = String.Format("SELECT * FROM users WHERE id = {0}", userID.ToString());
+            SqlCommand getUser = new SqlCommand(cmd, connection);
+
+            connection.Open();
+            sdr = getUser.ExecuteReader();
+            User user = new User();
+            while (sdr.Read())
+                user = new User(sdr.GetInt32(0), sdr.GetString(2), sdr.GetString(3));
+            connection.Close();
+
+            ViewBag.User = user;
+
+            List<Task> tasks = new List<Task>();
+            List<ValuationRow> valuationRows = new List<ValuationRow>();
+
+            cmd = String.Format("SELECT * FROM tasks WHERE projectFK = {0}", projectID.ToString());
+            SqlCommand getTasks = new SqlCommand(cmd, connection);
+            connection.Open();
+            sdr = getTasks.ExecuteReader();
+            while (sdr.Read())
+                tasks.Add(new Task(sdr.GetInt32(0), sdr.GetInt32(1), sdr.GetInt32(2), sdr.GetString(3), sdr.GetString(4), sdr.GetString(5), sdr.GetString(6), sdr.GetInt32(7), sdr.GetInt32(8), sdr.GetString(9), sdr.GetString(10)));
+            connection.Close();
+
+            int summaryHours = 0;
+            float summaryPrice = 0;
+
+            foreach(Task t in tasks)
+            {
+                User taskUser = new User();
+                cmd = String.Format("SELECT * FROM users WHERE id = {0}", t.UserFK);
+                SqlCommand getTaskUser = new SqlCommand(cmd, connection);
+                connection.Open();
+                sdr = getTaskUser.ExecuteReader();
+                while (sdr.Read())
+                    taskUser = new User(sdr.GetInt32(0), sdr.GetString(2), sdr.GetString(3));
+                connection.Close();
+
+                Technology taskTechnology = new Technology();
+                cmd = String.Format("SELECT * FROM technologies WHERE name ='{0}' AND projectFK = {1}", t.Technology, projectID);
+                SqlCommand getTaskTechnology = new SqlCommand(cmd, connection);
+                connection.Open();
+                sdr = getTaskTechnology.ExecuteReader();
+                while (sdr.Read())
+                {
+                    taskTechnology.Name = sdr.GetString(0);
+                    taskTechnology.Price = (float)sdr.GetDouble(2);
+                }
+                connection.Close();
+
+                float overallPrice = (float)t.Hours * taskTechnology.Price;
+                overallPrice = (float)Math.Round(overallPrice * 100f) / 100f;
+                valuationRows.Add(new ValuationRow(t.Name, taskUser.Name + ' ' + taskUser.Surname, t.Technology, t.Errand, t.Type, t.Hours, t.DoneHours, t.Status, overallPrice));
+                summaryHours += t.Hours;
+                summaryPrice += overallPrice;
+            }
+            ViewBag.SummaryHours = summaryHours;
+            ViewBag.SummaryPrice = summaryPrice;
+            return View(valuationRows);
+        }
+
+        [HttpGet]
+        public ActionResult ValuationXML(int? projectID)
+        {
+            if (Session["LoggedIn"] == null)
+                return RedirectToAction("Login", "Account");
+
+            if (projectID == null)
+                return RedirectToAction("Projects", "Dashboard");
+
+            Session["CurrentProject"] = projectID;
+
+            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
+
+            string cmd = String.Format("SELECT * FROM projects WHERE id = {0}", projectID.ToString());
+            SqlCommand getUserID = new SqlCommand(cmd, connection);
+
+            connection.Open();
+            SqlDataReader sdr = getUserID.ExecuteReader();
+            int userID = 1;
+            while (sdr.Read())
+            {
+                userID = sdr.GetInt32(1);
+                Session["CurrentProjectName"] = sdr.GetString(2);
+            }
+            connection.Close();
+
+            cmd = String.Format("SELECT * FROM users WHERE id = {0}", userID.ToString());
+            SqlCommand getUser = new SqlCommand(cmd, connection);
+
+            connection.Open();
+            sdr = getUser.ExecuteReader();
+            User user = new User();
+            while (sdr.Read())
+                user = new User(sdr.GetInt32(0), sdr.GetString(2), sdr.GetString(3));
+            connection.Close();
+
+            List<Task> tasks = new List<Task>();
+            List<ValuationRow> valuationRows = new List<ValuationRow>();
+
+            cmd = String.Format("SELECT * FROM tasks WHERE projectFK = {0}", projectID.ToString());
+            SqlCommand getTasks = new SqlCommand(cmd, connection);
+            connection.Open();
+            sdr = getTasks.ExecuteReader();
+            while (sdr.Read())
+                tasks.Add(new Task(sdr.GetInt32(0), sdr.GetInt32(1), sdr.GetInt32(2), sdr.GetString(3), sdr.GetString(4), sdr.GetString(5), sdr.GetString(6), sdr.GetInt32(7), sdr.GetInt32(8), sdr.GetString(9), sdr.GetString(10)));
+            connection.Close();
+
+            int summaryHours = 0;
+            float summaryPrice = 0;
+
+            foreach (Task t in tasks)
+            {
+                User taskUser = new User();
+                cmd = String.Format("SELECT * FROM users WHERE id = {0}", t.UserFK);
+                SqlCommand getTaskUser = new SqlCommand(cmd, connection);
+                connection.Open();
+                sdr = getTaskUser.ExecuteReader();
+                while (sdr.Read())
+                    taskUser = new User(sdr.GetInt32(0), sdr.GetString(2), sdr.GetString(3));
+                connection.Close();
+
+                Technology taskTechnology = new Technology();
+                cmd = String.Format("SELECT * FROM technologies WHERE name ='{0}' AND projectFK = {1}", t.Technology, projectID);
+                SqlCommand getTaskTechnology = new SqlCommand(cmd, connection);
+                connection.Open();
+                sdr = getTaskTechnology.ExecuteReader();
+                while (sdr.Read())
+                {
+                    taskTechnology.Name = sdr.GetString(0);
+                    taskTechnology.Price = (float)sdr.GetDouble(2);
+                }
+                connection.Close();
+
+                float overallPrice = (float)t.Hours * taskTechnology.Price;
+                overallPrice = (float)Math.Round(overallPrice * 100f) / 100f;
+                valuationRows.Add(new ValuationRow(t.Name, taskUser.Name + ' ' + taskUser.Surname, t.Technology, t.Errand, t.Type, t.Hours, t.DoneHours, t.Status, overallPrice));
+                summaryHours += t.Hours;
+                summaryPrice += overallPrice;
+            }
+
+            MemoryStream ms = new MemoryStream();
+            XmlWriterSettings xws = new XmlWriterSettings();
+            xws.OmitXmlDeclaration = true;
+            xws.Indent = true;
+
+            using (XmlWriter xw = XmlWriter.Create(ms, xws))
+            {
+                XDocument valuation = new XDocument();
+                XElement valuationElement = new XElement("valuation");
+                XElement tasksElement = new XElement("project", new XAttribute("name", Session["CurrentProjectName"].ToString()), new XAttribute("owner", user.Name + ' ' + user.Surname));
+                foreach(ValuationRow vr in valuationRows)
+                {
+                    XElement task = new XElement("task", new XElement("name", vr.Name), new XElement("assignedto", vr.Username), new XElement("technology", vr.Technology), new XElement("task", vr.Errand), new XElement("type", vr.Type), new XElement("hours", vr.Hours), new XElement("donehours", vr.DoneHours), new XElement("status", vr.Status), new XElement("overallprice", vr.OverallPrice));
+                    tasksElement.Add(task);
+                }
+                valuationElement.Add(tasksElement);
+                valuationElement.Add(new XElement("summaryhours", summaryHours), new XElement("summaryprice", summaryPrice));
+                valuation.Add(valuationElement);
+                valuation.WriteTo(xw);
+            }
+
+            ms.Position = 0;
+            return File(ms, "text/xml", "Valuation.xml");
+        }
+
+        [HttpGet]
+        public ActionResult ValuationCSV(int? projectID)
+        {
+            if (Session["LoggedIn"] == null)
+                return RedirectToAction("Login", "Account");
+
+            if (projectID == null)
+                return RedirectToAction("Projects", "Dashboard");
+
+            Session["CurrentProject"] = projectID;
+
+            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
+
+            string cmd = String.Format("SELECT * FROM projects WHERE id = {0}", projectID.ToString());
+            SqlCommand getUserID = new SqlCommand(cmd, connection);
+
+            connection.Open();
+            SqlDataReader sdr = getUserID.ExecuteReader();
+            int userID = 1;
+            while (sdr.Read())
+            {
+                userID = sdr.GetInt32(1);
+                Session["CurrentProjectName"] = sdr.GetString(2);
+            }
+            connection.Close();
+
+            cmd = String.Format("SELECT * FROM users WHERE id = {0}", userID.ToString());
+            SqlCommand getUser = new SqlCommand(cmd, connection);
+
+            connection.Open();
+            sdr = getUser.ExecuteReader();
+            User user = new User();
+            while (sdr.Read())
+                user = new User(sdr.GetInt32(0), sdr.GetString(2), sdr.GetString(3));
+            connection.Close();
+
+            List<Task> tasks = new List<Task>();
+            List<ValuationRow> valuationRows = new List<ValuationRow>();
+
+            cmd = String.Format("SELECT * FROM tasks WHERE projectFK = {0}", projectID.ToString());
+            SqlCommand getTasks = new SqlCommand(cmd, connection);
+            connection.Open();
+            sdr = getTasks.ExecuteReader();
+            while (sdr.Read())
+                tasks.Add(new Task(sdr.GetInt32(0), sdr.GetInt32(1), sdr.GetInt32(2), sdr.GetString(3), sdr.GetString(4), sdr.GetString(5), sdr.GetString(6), sdr.GetInt32(7), sdr.GetInt32(8), sdr.GetString(9), sdr.GetString(10)));
+            connection.Close();
+
+            int summaryHours = 0;
+            float summaryPrice = 0;
+
+            foreach (Task t in tasks)
+            {
+                User taskUser = new User();
+                cmd = String.Format("SELECT * FROM users WHERE id = {0}", t.UserFK);
+                SqlCommand getTaskUser = new SqlCommand(cmd, connection);
+                connection.Open();
+                sdr = getTaskUser.ExecuteReader();
+                while (sdr.Read())
+                    taskUser = new User(sdr.GetInt32(0), sdr.GetString(2), sdr.GetString(3));
+                connection.Close();
+
+                Technology taskTechnology = new Technology();
+                cmd = String.Format("SELECT * FROM technologies WHERE name ='{0}' AND projectFK = {1}", t.Technology, projectID);
+                SqlCommand getTaskTechnology = new SqlCommand(cmd, connection);
+                connection.Open();
+                sdr = getTaskTechnology.ExecuteReader();
+                while (sdr.Read())
+                {
+                    taskTechnology.Name = sdr.GetString(0);
+                    taskTechnology.Price = (float)sdr.GetDouble(2);
+                }
+                connection.Close();
+
+                float overallPrice = (float)t.Hours * taskTechnology.Price;
+                overallPrice = (float)Math.Round(overallPrice * 100f) / 100f;
+                valuationRows.Add(new ValuationRow(t.Name, taskUser.Name + ' ' + taskUser.Surname, t.Technology, t.Errand, t.Type, t.Hours, t.DoneHours, t.Status, overallPrice));
+                summaryHours += t.Hours;
+                summaryPrice += overallPrice;
+            }
+
+            string csvString = String.Empty;
+
+            csvString += Session["CurrentProjectName"].ToString() + ',' + user.Name + ' ' + user.Surname + ',' + summaryHours + ',' + summaryPrice + Environment.NewLine;
+            csvString += "name,assigned to,technology,task,type,hours,done hours,status,overall price" + Environment.NewLine;
+
+            foreach (ValuationRow vr in valuationRows)
+                csvString += vr.Name + ',' + vr.Username + ',' + vr.Technology + ',' + vr.Errand + ',' + vr.Type + ',' + vr.Hours + ',' + vr.DoneHours + ',' + vr.Status + ',' + vr.OverallPrice + Environment.NewLine;
+
+            byte[] bytes = Encoding.ASCII.GetBytes(csvString);            
+            return File(bytes, "text/plain", "Valuation.txt");
         }
 
     }

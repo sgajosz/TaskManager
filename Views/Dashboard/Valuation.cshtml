@@ -1,0 +1,59 @@
+﻿@model IEnumerable<TaskManager.Models.ValuationRow>
+
+@{
+    ViewBag.Title = "Tasks";
+    User owner = ViewBag.User as User;
+}
+
+@using TaskManager.Models;
+
+<h2>Tasks</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div>
+        <h3>@Session["CurrentProjectName"]</h3>
+        <h4>@owner.Name @owner.Surname</h4>
+        <br /><br />
+    </div>
+    <div>
+        <table style="width: 100%">
+            <tr>
+                <th><center>Name</center></th>
+                <th><center>Assigned to</center></th>
+                <th><center>Technology</center></th>
+                <th><center>Task</center></th>
+                <th><center>Type</center></th>
+                <th><center>Hours</center></th>
+                <th><center>Done hours</center></th>
+                <th><center>Status</center></th>
+                <th><center>Overall price</center></th>
+            </tr>
+            @foreach (ValuationRow vr in @Model)
+            {
+                <tr>
+                    <td><center>@vr.Name</center></td>
+                    <td><center>@vr.Username</center></td>
+                    <td><center>@vr.Technology</center></td>
+                    <td><center>@vr.Errand</center></td>
+                    <td><center>@vr.Type</center></td>
+                    <td><center>@vr.Hours</center></td>
+                    <td><center>@vr.DoneHours</center></td>
+                    <td><center>@vr.Status</center></td>
+                    <td><center>@vr.OverallPrice</center></td>
+                </tr>
+            }
+        </table>
+        <br/>
+        <div style="font-size: 20px">
+            Summary hours: @ViewBag.SummaryHours <br/>
+            Summary price: @ViewBag.SummaryPrice
+        </div>
+        <div>
+            @Html.ActionLink("Generate XML", "ValuationXML", "Dashboard", new { projectID = Int32.Parse(Session["CurrentProject"].ToString()) }, new { @class = "navbar-brand" })
+            @Html.ActionLink("Generate CSV", "ValuationCSV", "Dashboard", new { projectID = Int32.Parse(Session["CurrentProject"].ToString()) }, new { @class = "navbar-brand" })
+        </div>
+        <br/><br/>
+    </div>
+}

@@ -62,7 +62,7 @@ CREATE TABLE tasks (
 	projectFK INT FOREIGN KEY REFERENCES projects(id),
 	userFK INT FOREIGN KEY REFERENCES users(id),
 	name VARCHAR(50),
-	technology VARCHAR(50),
+	technology VARCHAR(50) FOREIGN KEY REFERENCES technologies(name),
 	errand VARCHAR(50),
 	type VARCHAR(50),
 	hours INT,
@@ -123,11 +123,12 @@ CREATE TABLE project_user_join (
 );
 
 CREATE TABLE technologies (
-	id INT PRIMARY KEY IDENTITY (1, 1),
-	name VARCHAR(50),
+	name VARCHAR(50) PRIMARY KEY,
 	projectFK INT FOREIGN KEY REFERENCES projects(id),
 	price FLOAT
 );
+
+DROP TABLE technologies;
 
 CREATE PROCEDURE addTechnology
 	@Name varchar(50),

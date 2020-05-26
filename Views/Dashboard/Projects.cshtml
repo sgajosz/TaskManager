@@ -22,6 +22,7 @@
             <th><center>Owner</center></th>
             <th><center>Creation date</center></th>
             <th><center>Add person to project</center></th>
+            <th><center>Generate valuation</center></th>
         </tr>
         @foreach (Project project in @Model)
         {
@@ -32,6 +33,7 @@
                 @if (project.UserFK == Int32.Parse(Session["ID"].ToString()))
                 {
                     <td><center>@Html.ActionLink("Add", "AddPersonToProject", "Dashboard", new { projectID = project.ID }, new { @class = "navbar-brand" })</center></td>
+                    <td><center>@Html.ActionLink("Valuation", "Valuation", "Dashboard", new { projectID = project.ID }, new { @class = "navbar-brand" })</center></td>
                 }
                 else
                 {
