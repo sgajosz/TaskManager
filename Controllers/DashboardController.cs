@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data.Entity.Migrations.Model;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
@@ -53,6 +54,7 @@ namespace TaskManager.Controllers
             connection.Close();
             return isParticipant;
         }
+
         public ActionResult Projects()
         {
             if (Session["LoggedIn"] == null)
@@ -186,6 +188,75 @@ namespace TaskManager.Controllers
         }
 
         [HttpGet]
+        public ActionResult DeleteProject(int? projectID)
+        {
+            if (Session["LoggedIn"] == null)
+                return RedirectToAction("Login", "Account");
+
+            if (projectID == null)
+                return RedirectToAction("Projects", "Dashboard");
+
+            Session["CurrentProject"] = projectID;
+
+            if (!IsOwner())
+                return RedirectToAction("Projects", "Dashboard");
+
+            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
+
+            string commandString = String.Format("DELETE FROM hours_history WHERE taskFK in (SELECT id FROM tasks WHERE projectFK = {0})", projectID);
+            SqlCommand delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            commandString = String.Format("DELETE FROM tasks WHERE projectFK = {0}", projectID);
+            delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            commandString = String.Format("DELETE FROM project_user_join WHERE projectFK = {0}", projectID);
+            delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            commandString = String.Format("DELETE FROM technologies WHERE projectFK = {0}", projectID);
+            delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            commandString = String.Format("DELETE FROM errands WHERE projectFK = {0}", projectID);
+            delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            commandString = String.Format("DELETE FROM types WHERE projectFK = {0}", projectID);
+            delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            commandString = String.Format("DELETE FROM projects WHERE id = {0}", projectID);
+            delete = new SqlCommand(commandString, connection);
+
+            connection.Open();
+            delete.ExecuteNonQuery();
+            connection.Close();
+
+            return RedirectToAction("Projects", "Dashboard");
+        }
+
+        [HttpGet]
         public ActionResult Tasks(int? projectID)
         {
             if (Session["LoggedIn"] == null)
@@ -223,7 +294,6 @@ namespace TaskManager.Controllers
             while (sdr.Read())
                 projectTasks.Add(new Task(sdr.GetInt32(0), sdr.GetInt32(1), sdr.GetInt32(2), sdr.GetString(3), sdr.GetString(4), sdr.GetString(5), sdr.GetString(6), sdr.GetInt32(7), sdr.GetInt32(8), sdr.GetString(9), sdr.GetString(10)));
             connection.Close();
-
 
             return View(projectTasks);
         }
@@ -266,6 +336,8 @@ namespace TaskManager.Controllers
             List<string> userStrings = new List<string>();
             foreach (User u in users)
                 userStrings.Add(u.Name + " " + u.Surname + " #" + u.ID.ToString());
+
+            userStrings.Add(Session["Name"].ToString() + " " + Session["Surname"].ToString() + " #" + Session["ID"]);
 
             List<string> technologies = new List<string>();
             sqlCmd = String.Format("SELECT name FROM technologies WHERE projectFK = {0}", Session["CurrentProject"].ToString());
@@ -544,12 +616,75 @@ namespace TaskManager.Controllers
                 connection.Open();
                 cmd.ExecuteNonQuery();
                 connection.Close();
+
+                connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+
+                cmd = new SqlCommand("addHoursHistory", connection);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                SqlParameter editor = new SqlParameter();
+                editor.ParameterName = "@User";
+                editor.Value = Int32.Parse(Session["ID"].ToString());
+                cmd.Parameters.Add(editor);
+
+                SqlParameter editedTask = new SqlParameter();
+                editedTask.ParameterName = "@Task";
+                editedTask.Value = Int32.Parse(Session["CurrentTask"].ToString());
+                cmd.Parameters.Add(editedTask);
+
+                SqlParameter editedAt = new SqlParameter();
+                editedAt.ParameterName = "@Edited";
+                editedAt.Value = DateTime.Now;
+                cmd.Parameters.Add(editedAt);
+
+                SqlParameter editedHours = new SqlParameter();
+                editedHours.ParameterName = "@Hours";
+                editedHours.Value = tvm.DoneHours;
+                cmd.Parameters.Add(editedHours);
+
+                connection.Open();
+                cmd.ExecuteNonQuery();
+                connection.Close();
             }
             else
                 return RedirectToAction("Login", "Account");
 
 
             return RedirectToAction("Tasks", "Dashboard", new { projectID = Session["CurrentProject"] });
+        }
+
+        [HttpGet]
+        public ActionResult HoursHistory(int? taskID, string name)
+        {
+            if (Session["LoggedIn"] == null)
+                return RedirectToAction("Login", "Account");
+
+            if (taskID == null)
+                return RedirectToAction("Projects", "Dashboard");
+
+            bool isOwner = IsOwner(), isParticipant = IsParticipant((int)Session["CurrentProject"]);
+
+            if (!isOwner && !isParticipant)
+                return RedirectToAction("Projects", "Dashboard");
+
+            UserContext userContext = new UserContext();
+            ViewBag.UserContext = userContext;
+
+            string connectionString = ConfigurationManager.ConnectionStrings["DBConnection"].ConnectionString;
+            SqlConnection connection = new SqlConnection(connectionString);
+            string sqlCmd = String.Format("SELECT * FROM hours_history WHERE taskFK = {0}", taskID.ToString());
+            SqlCommand getHistories = new SqlCommand(sqlCmd, connection);
+            connection.Open();
+            SqlDataReader historyReader = getHistories.ExecuteReader();
+            List<HoursHistory> hoursHistories = new List<HoursHistory>();
+            while (historyReader.Read())
+                hoursHistories.Add(new HoursHistory(historyReader.GetInt32(0), historyReader.GetInt32(1), historyReader.GetInt32(2), historyReader.GetDateTime(3), historyReader.GetInt32(4)));         
+            connection.Close();
+
+            ViewBag.HoursHistories = hoursHistories;
+            ViewBag.TaskName = name;
+
+            return View();
         }
 
         [HttpGet]

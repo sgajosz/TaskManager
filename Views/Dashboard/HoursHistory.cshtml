@@ -1,0 +1,31 @@
+﻿@{
+    ViewBag.Title = "Task History";
+    UserContext userContext = ViewBag.UserContext as UserContext;
+    List<HoursHistory> hoursHistories = ViewBag.HoursHistories as List<HoursHistory>;
+}
+
+@using TaskManager.Models;
+
+<h2>Task History</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <h4>History</h4>
+    <div>
+        <table style="width: 100%">
+            <tr>
+                <th><center>Edited by</center></th>
+                <th><center>Edited at</center></th>
+                <th><center>Hours changed to</center></th>
+            </tr>
+            @foreach (HoursHistory hh in hoursHistories)
+            {
+                <tr>
+                    <td><center>@userContext.Users.Single(usr => usr.ID == hh.UserFK).Name @userContext.Users.Single(usr => usr.ID == hh.UserFK).Surname</center></td>
+                    <td><center>@hh.EditedAt</center></td>
+                    <td><center>@hh.Hours</center></td>
+                </tr>
+            }
+        </table>
+    </div>
+}

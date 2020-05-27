@@ -4,6 +4,7 @@
     ViewBag.Title = "Tasks";
     UserContext userContext = ViewBag.UserContext as UserContext;
     ProjectContext projectContext = ViewBag.ProjectContext as ProjectContext;
+    List<HoursHistory> hoursHistories = ViewBag.HoursHistories as List<HoursHistory>;
 }
 
 @using TaskManager.Models;
@@ -32,10 +33,10 @@
                 <th><center>Description</center></th>
                 <th><center>Edit task</center></th>
             </tr>
-            @foreach(Task t in @Model)
+            @foreach (Task t in @Model)
             {
                 <tr>
-                    <td><center>@t.Name</center></td>
+                    <td><center>@Html.ActionLink(t.Name, "HoursHistory", "Dashboard", new { taskID = t.ID, name = t.Name }, new { @class = "navbar-brand" })</center></td>
                     <td><center>@userContext.Users.Single(usr => usr.ID == t.UserFK).Name @userContext.Users.Single(usr => usr.ID == t.UserFK).Surname</center></td>
                     <td><center>@t.Technology</center></td>
                     <td><center>@t.Errand</center></td>

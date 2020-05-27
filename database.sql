@@ -139,6 +139,8 @@ BEGIN
 	INSERT INTO technologies(name, projectFK, price) VALUES (@Name, @ProjectFK, @Price)
 END
 
+SELECT * FROM tasks;
+
 CREATE TABLE types (
 	id INT PRIMARY KEY IDENTITY (1, 1),
 	name VARCHAR(50),
@@ -159,6 +161,27 @@ CREATE TABLE errands (
 	projectFK INT FOREIGN KEY REFERENCES projects(id)
 );
 
+CREATE TABLE hours_history (
+	id INT PRIMARY KEY IDENTITY (1, 1),
+	userFK INT FOREIGN KEY REFERENCES users(id),
+	taskFK INT FOREIGN KEY REFERENCES tasks(id),
+	edited_at datetime,
+	hours INT
+);
+
+SELECT * FROM hours_history;
+
+CREATE PROCEDURE addHoursHistory
+	@User as int,
+	@Task as int,
+	@Edited as datetime,
+	@Hours as int
+AS
+BEGIN
+	INSERT INTO hours_history(userFK, taskFK, edited_at, hours) VALUES (@User, @Task, @Edited, @Hours)
+END
+
+DELETE FROM hours_history WHERE taskFK in (SELECT id FROM tasks WHERE projectFK = 1);
 DROP TABLE technologies, errands, types;
 
 CREATE PROCEDURE addErrand

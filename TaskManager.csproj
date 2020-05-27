@@ -276,6 +276,7 @@
     </Compile>
     <Compile Include="Models\Errand.cs" />
     <Compile Include="Models\ErrandContext.cs" />
+    <Compile Include="Models\HoursHistory.cs" />
     <Compile Include="Models\Project.cs" />
     <Compile Include="Models\ProjectContext.cs" />
     <Compile Include="Models\ProjectUserJoin.cs" />
@@ -348,6 +349,7 @@
     <Content Include="Views\Dashboard\AddErrand.cshtml" />
     <Content Include="Views\Dashboard\EditTask.cshtml" />
     <Content Include="Views\Dashboard\Valuation.cshtml" />
+    <Content Include="Views\Dashboard\HoursHistory.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
